@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 656" role="img" aria-label="证书更新后缓存没刷新，签章开始失败；告警晚、误判、回滚后仍报错，把故障拖了约 2 小时"
+     font-family="'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8f959e"/>
+    </marker>
+  </defs>
+
+  <text x="32" y="48" font-size="18" font-weight="600" fill="#1f2329">证书更新后缓存没刷新，签章开始失败；告警晚、误判、回滚后仍报错，把故障拖了约 2 小时</text>
+  <text x="32" y="74" font-size="12" fill="#646a73">据复盘报告初稿 v0.3 整理（尚未经复盘会评审）</text>
+
+  <!-- ① 怎么发生 -->
+  <text x="32" y="116" font-size="14" font-weight="600" fill="#1f2329">① 故障怎么发生、波及谁</text>
+
+  <g fill="none" stroke="#8f959e" stroke-width="1.5">
+    <path d="M272 168H344V208H376" marker-end="url(#arrow)"/>
+    <path d="M272 268H344V232H376" marker-end="url(#arrow)"/>
+    <path d="M608 220H672" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="12" fill="#646a73">
+    <text x="280" y="160">证书已换</text>
+    <text x="280" y="260">缓存不刷新</text>
+    <text x="640" y="212" text-anchor="middle">波及客户</text>
+  </g>
+
+  <g>
+    <rect x="32" y="136" width="240" height="64" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="152" y="164" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">09:30 更新中间 CA 证书</text>
+    <text x="152" y="184" text-anchor="middle" font-size="13" fill="#1f2329">变更评估写“不影响在线服务”</text>
+  </g>
+  <g>
+    <rect x="32" y="224" width="240" height="88" rx="8" fill="#3370ff" fill-opacity="0.08" stroke="#3370ff" stroke-width="2"/>
+    <text x="152" y="252" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">签章服务缓存证书链 24 小时</text>
+    <text x="152" y="272" text-anchor="middle" font-size="13" fill="#1f2329">且不监听证书变更事件</text>
+    <text x="152" y="292" text-anchor="middle" font-size="13" fill="#1f2329">测试环境只缓存 5 分钟，没暴露</text>
+  </g>
+  <g>
+    <rect x="376" y="176" width="232" height="88" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="492" y="204" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">各节点仍用旧链校验</text>
+    <text x="492" y="224" text-anchor="middle" font-size="13" fill="#1f2329">旧链与新中间证书不匹配</text>
+    <text x="492" y="244" text-anchor="middle" font-size="13" fill="#1f2329">签章失败，最早一笔 09:41</text>
+  </g>
+  <g>
+    <rect x="672" y="152" width="256" height="128" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="800" y="180" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">受影响客户：表中合计 41 家</text>
+    <text x="800" y="202" text-anchor="middle" font-size="13" fill="#1f2329">46,532 笔签章失败，3 家投诉</text>
+    <text x="800" y="222" text-anchor="middle" font-size="13" fill="#1f2329">约 92% 恢复后自动重试成功</text>
+    <text x="800" y="242" text-anchor="middle" font-size="13" fill="#1f2329">约 8% 需手动重发，损失核实中</text>
+    <text x="800" y="264" text-anchor="middle" font-size="12" fill="#646a73">概述写 37 家，与影响表不一致</text>
+  </g>
+
+  <!-- ② 为什么拖长 -->
+  <line x1="32" y1="328" x2="928" y2="328" stroke="#dee0e3"/>
+  <text x="32" y="360" font-size="14" font-weight="600" fill="#1f2329">② 为什么拖了约 2 小时<tspan font-size="12" font-weight="400" fill="#646a73">（横轴按真实时间比例）</tspan></text>
+
+  <!-- 刻度 -->
+  <g stroke="#dee0e3" stroke-width="1">
+    <path d="M48 414V452M187 414V452M363 414V452M584 414V452M817 414V452"/>
+    <path d="M117 446V452M269 446V452M540 446V452M679 446V452M912 446V452"/>
+  </g>
+  <line x1="48" y1="456" x2="912" y2="456" stroke="#8f959e" stroke-width="1.5"/>
+  <g fill="#8f959e">
+    <circle cx="48" cy="456" r="3"/><circle cx="117" cy="456" r="3"/><circle cx="187" cy="456" r="3"/>
+    <circle cx="269" cy="456" r="3"/><circle cx="363" cy="456" r="3"/><circle cx="540" cy="456" r="3"/>
+    <circle cx="584" cy="456" r="3"/><circle cx="679" cy="456" r="3"/><circle cx="817" cy="456" r="3"/>
+    <circle cx="912" cy="456" r="3"/>
+  </g>
+  <!-- 上排事件 -->
+  <g font-size="12" fill="#1f2329" text-anchor="middle">
+    <text x="48" y="392" text-anchor="start" font-weight="600">09:30</text><text x="48" y="408" text-anchor="start">更新证书</text>
+    <text x="187" y="392" font-weight="600">09:52</text><text x="187" y="408">首次告警</text>
+    <text x="363" y="392" font-weight="600">10:20</text><text x="363" y="408">扩容连接池</text>
+    <text x="584" y="392" font-weight="600">10:55</text><text x="584" y="408">决定回滚</text>
+    <text x="817" y="392" font-weight="600">11:32</text><text x="817" y="408">逐台重启 12 节点</text>
+  </g>
+  <!-- 下排事件 -->
+  <g font-size="12" fill="#1f2329" text-anchor="middle">
+    <text x="117" y="424" font-weight="600">09:41</text><text x="117" y="440">首笔失败</text>
+    <text x="269" y="424" font-weight="600">10:05</text><text x="269" y="440">确认告警</text>
+    <text x="540" y="424" font-weight="600">10:48</text><text x="540" y="440">定位到缓存</text>
+    <text x="679" y="424" font-weight="600">11:10</text><text x="679" y="440">回滚完成</text>
+    <text x="912" y="424" text-anchor="end" font-weight="600">11:47</text><text x="912" y="440" text-anchor="end">恢复（&lt;0.1%）</text>
+  </g>
+
+  <!-- 拖长故障的环节 -->
+  <g fill="#f54a45" fill-opacity="0.15" stroke="#f54a45" stroke-width="1">
+    <rect x="117" y="464" width="68" height="12"/>
+    <rect x="189" y="464" width="80" height="12"/>
+    <rect x="363" y="464" width="177" height="12"/>
+    <rect x="679" y="464" width="138" height="12"/>
+  </g>
+  <g fill="none" stroke="#8f959e" stroke-width="1">
+    <path d="M228 476V532"/>
+    <path d="M748 508V534" stroke-dasharray="4 3"/>
+  </g>
+  <g font-size="12" fill="#646a73" text-anchor="middle">
+    <text x="144" y="500">错误率 1%–4% 波动</text>
+    <text x="144" y="516">未到 5% 告警线</text>
+
+    <text x="228" y="548">只发值班群、没打电话</text>
+    <text x="228" y="564">13 分钟无人响应</text>
+
+    <text x="451" y="500">误判为数据库连接池耗尽，约 28 分钟</text>
+    <text x="451" y="516">大量超时其实是客户端重试的连锁现象</text>
+
+    <text x="748" y="500">回滚后仍有节点报错</text>
+    <text x="748" y="550">3 个中途重启过的节点已加载新链，</text>
+    <text x="748" y="566">回滚后反而不匹配？</text>
+  </g>
+
+  <!-- 图例 -->
+  <g font-size="12" fill="#646a73">
+    <rect x="32" y="608" width="16" height="16" rx="4" fill="#3370ff" fill-opacity="0.08" stroke="#3370ff"/>
+    <text x="56" y="620">蓝框：直接原因</text>
+    <rect x="176" y="610" width="24" height="12" fill="#f54a45" fill-opacity="0.15" stroke="#f54a45"/>
+    <text x="208" y="620">红条：拖长故障的时段</text>
+    <line x1="360" y1="616" x2="400" y2="616" stroke="#8f959e" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="408" y="620">虚线和「？」：原文为事后推断，尚未复现</text>
+  </g>
+</svg>

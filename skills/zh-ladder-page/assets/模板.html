@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- 标题：两到四个词，说清这页讲什么 -->
+<title>补贴怎么算</title>
+<style>
+  /* ===== 颜色和字体：只改这里 ===== */
+  :root {
+    --bg: #ffffff; --surface: #f7f8fa; --line: #dee0e3;
+    --ink: #1f2329; --ink-2: #646a73;
+    --accent: #3370ff; --accent-soft: rgba(51,112,255,.08);
+    --bad: #d83931; --good: #2ea121; --warn: #de7802;
+    --font: "PingFang SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;
+    --num: "SF Mono","JetBrains Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17181a; --surface: #202124; --line: #34363a;
+      --ink: #e8e9eb; --ink-2: #a3a6ad;
+      --accent: #5b8cff; --accent-soft: rgba(91,140,255,.14);
+      --bad: #f06a62; --good: #4cc35a; --warn: #f0a040;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 var(--font); }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; line-height: 1.4; margin: 0 0 8px; }
+  h2 { font-size: 17px; margin: 40px 0 12px; }
+  .lead { color: var(--ink-2); margin: 0 0 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 21px; } }
+  label { display: block; font-weight: 600; margin: 0 0 4px; }
+  .hint { color: var(--ink-2); font-size: 13px; }
+  .control { margin-bottom: 18px; }
+  input[type=range] { width: 100%; height: 32px; accent-color: var(--accent); }
+  .val { font-family: var(--num); }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button, .guess button {
+    font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .big { font-family: var(--num); font-size: 36px; font-weight: 700; line-height: 1.2; }
+  .result-note { margin-top: 8px; }
+  .steps { margin: 12px 0 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; }
+  .guess { margin-top: 24px; }
+  .guess .opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .reveal { display: none; padding: 12px; border-radius: 8px; background: var(--accent-soft); }
+  .reveal.show { display: block; }
+  .tag { display: inline-block; font-size: 12px; padding: 0 8px; border-radius: 10px; border: 1px solid currentColor; margin-left: 6px; white-space: nowrap; }
+  .tag.src { color: var(--good); } .tag.calc { color: var(--accent); } .tag.none { color: var(--warn); }
+  ul.plain { padding-left: 20px; } ul.plain li { margin: 4px 0; }
+  svg text { font-family: var(--font); }
+  details summary { cursor: pointer; color: var(--ink-2); }
+  footer { margin-top: 40px; font-size: 13px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<main>
+  <!-- ① 一句话结论：读者十秒看懂 -->
+  <h1 id="conclusion">补贴按投入总额定档、整笔乘比例，再按该档上限封顶：投得多，比例反而低</h1>
+  <p class="lead">拖动下面的投入金额，看看你的项目能拿多少。本页是模板示例，数字为虚构。</p>
+
+  <!-- ② 控件和联动的结果 -->
+  <section class="grid">
+    <div class="card">
+      <div class="control">
+        <label for="amount">项目实际投入：<span class="val" id="amount-out"></span> 万元</label>
+        <input id="amount" type="range" min="0" max="1500" step="10" value="90">
+        <div class="hint">按发票和付款凭证一致的金额计</div>
+      </div>
+      <div class="control">
+        <label>是否享受上浮</label>
+        <div class="seg" id="bonus" role="group" aria-label="是否享受上浮">
+          <button type="button" data-v="0" aria-pressed="true">否</button>
+          <button type="button" data-v="1" aria-pressed="false">是（+5 个百分点）</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" aria-live="polite">
+      <div class="hint">能拿到的补贴</div>
+      <div class="big"><span id="out-amount"></span> 万元</div>
+      <div class="result-note" id="out-note"></div>
+      <ol class="steps" id="out-steps"></ol>
+    </div>
+  </section>
+
+  <!-- 图：随输入变化。没有合适的图就删掉这一块 -->
+  <section class="card" style="margin-top:20px">
+    <svg id="chart" role="img" aria-label="投入金额与补贴的关系" width="100%" height="180"></svg>
+  </section>
+
+  <!-- ③ 先猜后看 -->
+  <section class="card guess" id="guess">
+    <label>先猜一下：投入从 90 万增加到 110 万，补贴会怎样？</label>
+    <div class="opts">
+      <button type="button" data-guess="up">变多</button>
+      <button type="button" data-guess="same">不变</button>
+      <button type="button" data-guess="down">变少</button>
+    </div>
+    <div class="reveal" id="guess-reveal"></div>
+  </section>
+
+  <!-- ④ 假设与依据：每条规则写出处；原文没说的标出来 -->
+  <h2>这页按什么算</h2>
+  <ul class="plain">
+    <li>按投入总额落在哪一档，整笔乘该档比例，不分段累进 <span class="tag src">原文第三条</span></li>
+    <li>各档比例和上限见上面的计算过程 <span class="tag src">原文附表</span></li>
+    <li>上浮后仍受所在档上限约束 <span class="tag src">原文第四条</span></li>
+    <li>示例中「投入 110 万」的结果 <span class="tag calc">按原文条款推算</span></li>
+    <li>跨年项目的拆分口径 <span class="tag none">原文未说明</span></li>
+  </ul>
+
+  <!-- ⑤ 本页不能告诉你什么 -->
+  <h2>本页不能告诉你什么</h2>
+  <ul class="plain">
+    <li>能不能通过专家评审：页面只算金额，不判断资格。</li>
+    <li>同一企业年度累计上限、集团合计上限：本页按单个项目计算。</li>
+  </ul>
+
+  <!-- ⑥ 来源：只列真正打开过的；没有就删掉这一节 -->
+  <h2>来源</h2>
+  <ul class="plain"><li>《示例补贴实施细则》（虚构）</li></ul>
+
+  <footer>本页不联网、不保存任何输入。</footer>
+</main>
+
+<script>
+/* ===== 规则：每个数字都要能在原文里找到 ===== */
+const TIERS = [                       // [下限(含), 比例, 上限]，单位万元
+  { min: 20,   rate: 0.30, cap: 25 },
+  { min: 100,  rate: 0.25, cap: 60 },
+  { min: 300,  rate: 0.20, cap: 150 },
+  { min: 1000, rate: 0.15, cap: 200 },
+];
+const BONUS = 0.05;
+
+/* 纯函数：输入 → 结果和计算步骤。不要在这里碰页面。 */
+function compute(amount, bonus) {
+  const tier = [...TIERS].reverse().find(t => amount >= t.min);
+  if (!tier) return { value: 0, note: "低于 20 万，不予补贴", steps: ["投入低于最低一档的下限 20 万"] };
+  const rate = tier.rate + (bonus ? BONUS : 0);
+  const raw = amount * rate;
+  const value = Math.min(raw, tier.cap);
+  const steps = [
+    `投入 ${fmt(amount)} 万，落在「${tier.min} 万以上」这一档`,
+    `比例 ${pct(tier.rate)}${bonus ? ` + 上浮 ${pct(BONUS)} = ${pct(rate)}` : ""}`,
+    `${fmt(amount)} × ${pct(rate)} = ${fmt(raw)} 万`,
+    raw > tier.cap ? `超过该档上限 ${tier.cap} 万，按 ${tier.cap} 万封顶` : `未超过该档上限 ${tier.cap} 万`,
+  ];
+  return { value, note: raw > tier.cap ? "已被上限封顶" : "", steps };
+}
+
+const fmt = n => (Math.round(n * 10) / 10).toLocaleString("zh-CN");
+const pct = r => `${Math.round(r * 100)}%`;
+const $ = id => document.getElementById(id);
+const state = { amount: 90, bonus: 0 };
+
+/* 渲染：只用 textContent，不用 innerHTML 拼接 */
+function render() {
+  const r = compute(state.amount, state.bonus);
+  $("amount-out").textContent = fmt(state.amount);
+  $("out-amount").textContent = fmt(r.value);
+  $("out-note").textContent = r.note;
+  const ol = $("out-steps"); ol.replaceChildren();
+  r.steps.forEach(s => { const li = document.createElement("li"); li.textContent = s; ol.append(li); });
+  drawChart();
+}
+
+function drawChart() {
+  // 按容器的实际宽度画，文字就保持真实字号；用固定 viewBox 缩放的话，手机上字会缩到看不清
+  const svg = $("chart"), W = Math.max(300, svg.clientWidth || 840), H = 180, L = 16, R = 24, T = 24, B = 32, maxX = 1500, maxY = 220;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = v => L + (v / maxX) * (W - L - R), y = v => H - B - (v / maxY) * (H - T - B);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  svg.replaceChildren();
+  svg.append(el("line", { x1: L, y1: H - B, x2: W - R, y2: H - B, stroke: "var(--line)" }));
+  let d = "";
+  for (let a = 0; a <= maxX; a += 5) d += `${a ? "L" : "M"}${x(a).toFixed(1)} ${y(compute(a, state.bonus).value).toFixed(1)}`;
+  svg.append(el("path", { d, fill: "none", stroke: "var(--ink-2)", "stroke-width": 1.5 }));
+  const cur = compute(state.amount, state.bonus).value;
+  svg.append(el("circle", { cx: x(state.amount), cy: y(cur), r: 6, fill: "var(--accent)" }));
+  // 两端的刻度靠边对齐，免得被画布切掉
+  [0, 500, 1000, 1500].forEach(v => svg.append(el("text", { x: x(v), y: H - 10, "text-anchor": v === 0 ? "start" : v === maxX ? "end" : "middle", "font-size": 13, fill: "var(--ink-2)" }, `${v} 万`)));
+  svg.append(el("text", { x: L, y: T - 8, "font-size": 13, fill: "var(--ink-2)" }, "补贴（万元）"));
+}
+
+/* 事件 */
+$("amount").addEventListener("input", e => { state.amount = +e.target.value; render(); });
+$("bonus").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.bonus = +b.dataset.v;
+  [...$("bonus").children].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+});
+$("guess").addEventListener("click", e => {
+  const b = e.target.closest("button[data-guess]"); if (!b) return;
+  // 揭晓文字由计算结果生成，不要手写结论：手写的结论很容易和公式对不上
+  const A = compute(90, 0), C = compute(110, 0);
+  const truth = C.value > A.value ? "up" : C.value < A.value ? "down" : "same";
+  const word = { up: "变多", same: "不变", down: "变少" }[truth];
+  const box = $("guess-reveal");
+  box.textContent = `${b.dataset.guess === truth ? "猜对了" : "没猜对"}，答案是${word}：` +
+    `90 万能拿 ${fmt(A.value)} 万（${A.steps.slice(1).join("，")}）；` +
+    `110 万能拿 ${fmt(C.value)} 万（${C.steps.slice(1).join("，")}）。`;
+  box.classList.add("show");
+});
+
+window.addEventListener("resize", drawChart);
+render();
+</script>
+</body>
+</html>

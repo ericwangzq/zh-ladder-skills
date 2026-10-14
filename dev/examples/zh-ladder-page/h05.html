@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>可用率抵扣计算</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f7f8fa; --line: #dee0e3;
+    --ink: #1f2329; --ink-2: #646a73;
+    --accent: #3370ff; --accent-soft: rgba(51,112,255,.08);
+    --bad: #d83931; --good: #2ea121; --warn: #de7802; --warn-soft: rgba(222,120,2,.10);
+    --font: "PingFang SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;
+    --num: "SF Mono","JetBrains Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17181a; --surface: #202124; --line: #34363a;
+      --ink: #e8e9eb; --ink-2: #a3a6ad;
+      --accent: #5b8cff; --accent-soft: rgba(91,140,255,.14);
+      --bad: #f06a62; --good: #4cc35a; --warn: #f0a040; --warn-soft: rgba(240,160,64,.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 var(--font); }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; line-height: 1.4; margin: 0 0 8px; }
+  h2 { font-size: 17px; margin: 40px 0 12px; }
+  .lead { color: var(--ink-2); margin: 0 0 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 21px; } }
+  label { display: block; font-weight: 600; margin: 0 0 4px; }
+  .hint { color: var(--ink-2); font-size: 13px; }
+  .control { margin-bottom: 18px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .val { font-family: var(--num); }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button, .guess button, .nudge button {
+    font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer;
+  }
+  .nudge { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .nudge button { padding: 2px 10px; font-size: 13px; }
+  .seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .big { font-family: var(--num); font-size: 36px; font-weight: 700; line-height: 1.2; }
+  .result-note { margin-top: 8px; font-weight: 600; }
+  .result-note:empty { display: none; }
+  .warnbox { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--warn-soft); font-size: 14px; }
+  .warnbox:empty { display: none; }
+  .steps li { overflow-wrap: anywhere; }
+  .steps { margin: 12px 0 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; }
+  .guess { margin-top: 24px; }
+  .guess .opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .reveal { display: none; padding: 12px; border-radius: 8px; background: var(--accent-soft); }
+  .reveal.show { display: block; }
+  .tag { display: inline-block; font-size: 12px; padding: 0 8px; border-radius: 10px; border: 1px solid currentColor; margin-left: 6px; white-space: nowrap; }
+  .tag.src { color: var(--good); } .tag.calc { color: var(--accent); } .tag.none { color: var(--warn); }
+  ul.plain { padding-left: 20px; } ul.plain li { margin: 4px 0; }
+  svg text { font-family: var(--font); }
+  footer { margin-top: 40px; font-size: 13px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="conclusion">可用率每跌破一道线，抵扣就跳一档：不低于 99.9% 不抵扣，99.5%–99.9% 抵当月服务费 5%，99.0%–99.5% 抵 10%，低于 99.0% 抵 20%</h1>
+  <p class="lead">先选合同年度，再拖可用率，看本月能抵扣多少服务费。按《智能办公平台技术服务合同》乙方第二轮回复稿推算，该合同尚未签署，条款仍可能变。</p>
+
+  <section class="grid">
+    <div class="card">
+      <div class="control">
+        <label>本月属于合同第几年</label>
+        <div class="seg" id="year" role="group" aria-label="合同年度">
+          <button type="button" data-v="1" aria-pressed="false">首年（10 万元/月）</button>
+          <button type="button" data-v="2" aria-pressed="true">第二、三年（12.5 万元/月）</button>
+        </div>
+      </div>
+      <div class="control">
+        <label for="avail">核心功能本月可用率：<span class="val" id="avail-out"></span>%</label>
+        <input id="avail" type="range" min="9850" max="10000" step="1" value="9960" aria-describedby="avail-hint">
+        <div class="nudge" aria-label="微调可用率">
+          <button type="button" data-d="-1">−0.01</button>
+          <button type="button" data-d="1">+0.01</button>
+          <button type="button" data-set="9990">99.90</button>
+          <button type="button" data-set="9950">99.50</button>
+          <button type="button" data-set="9900">99.00</button>
+        </div>
+        <div class="hint" id="avail-hint">只算文档编辑、在线协作、电子签章这三项核心功能。模板市场、数据看板、智能推荐出问题不算（5.3）。</div>
+      </div>
+      <div class="hint">输入前先把这些时间从「不可用」里剔除：乙方提前 72 小时书面通知的计划维护，每月累计 8 小时以内的部分（超出 8 小时的部分仍算不可用，5.2）；甲方（我行）自己的网络、终端、自装软件，甲方要求的紧急变更，不可抗力造成的不可用（6.6）。</div>
+    </div>
+    <div class="card" aria-live="polite">
+      <div class="hint">本月可抵扣的服务费</div>
+      <div class="big"><span id="out-amount"></span> 元</div>
+      <div class="result-note" id="out-note"></div>
+      <ol class="steps" id="out-steps"></ol>
+      <div class="warnbox" id="out-warn"></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:20px">
+    <div class="hint">可用率与本月抵扣金额（当前合同年度）</div>
+    <svg id="chart" role="img" aria-label="可用率与抵扣金额的阶梯关系" width="100%" height="200"></svg>
+  </section>
+
+  <section class="card guess" id="guess">
+    <label>先猜一下：第二年某月，可用率从 99.50% 降到 99.49%，只差 0.01 个百分点，抵扣金额会怎样？</label>
+    <div class="opts">
+      <button type="button" data-guess="tiny">几乎不变，多几十元</button>
+      <button type="button" data-guess="double">翻一倍</button>
+      <button type="button" data-guess="quad">变成 4 倍</button>
+    </div>
+    <div class="reveal" id="guess-reveal"></div>
+  </section>
+
+  <h2>这页按什么算</h2>
+  <ul class="plain">
+    <li>当月服务费：首年 10 万元/月，第二、三年 12.5 万元/月 <span class="tag src">原文 4.4 条</span></li>
+    <li>月度可用率 =（当月总分钟数 − 不可用分钟数）÷ 当月总分钟数 × 100%，承诺不低于 99.9% <span class="tag src">原文 5.1 条</span></li>
+    <li>低于 99.9% 但不低于 99.5%：抵当月服务费 5%；低于 99.5% 但不低于 99.0%：10%；低于 99.0%：20%。正好 99.5% 或 99.0% 按较轻的一档 <span class="tag src">原文 6.1–6.3 条</span></li>
+    <li>抵扣用来抵减下期服务费，不付现金；合同终止时没抵完的部分退现金 <span class="tag src">原文 6.5 条</span></li>
+    <li>可用率低于 99.5% 的月份，连续 3 个月或任意 12 个月内累计 4 个月，甲方可单方解约 <span class="tag src">原文 6.4 条</span></li>
+    <li>服务抵扣是可用率不达标的唯一救济，解约权不受影响 <span class="tag src">原文 10.3 条</span></li>
+    <li>「相当于不可用多少分钟」：按 5.1 条公式反推 <span class="tag calc">按原文条款推算</span></li>
+    <li>首年的抵扣具体从哪一笔款里扣：首年只有签约、验收两笔付款，原文没写之后的抵扣落到哪一期 <span class="tag none">原文未说明</span></li>
+  </ul>
+
+  <h2>原文里有一处数字对不上</h2>
+  <p>附在法务备注后的「主要数字速查表」写着「可用率低于 99.0%：当月服务费 15%」，合同 6.3 条写的是 <strong>20%</strong>。本页按合同正文 6.3 条算。速查表注明由实习生整理、未经王律师复核；用速查表算低于 99.0% 的月份会少算四分之一。另外，王律师建议把 20% 提到 30%，这只是法务内部建议，还没和乙方谈，本页不采用。</p>
+
+  <h2>本页不能告诉你什么</h2>
+  <ul class="plain">
+    <li>本月可用率到底是多少：需要你按 5.2、6.6 条先剔除计划维护和甲方原因的时间，再输入。原文没规定由谁统计、以谁的监控数据为准。</li>
+    <li>是否已经触发解约权：要看连续几个月的情况，本页只算单月。</li>
+    <li>谈判结果：合同处于谈判阶段，条款是乙方第二轮回复稿，签署前比例和档位都可能改。</li>
+  </ul>
+
+  <footer>本页不联网、不保存任何输入。条款来源：《智能办公平台技术服务合同》第 4–12 条摘录及法务部审查备注（虚构培训示例）。</footer>
+</main>
+
+<script>
+/* ===== 规则（合同第 4.4、6.1–6.3 条）。可用率用「万分之一」整数表示，避免小数误差：9950 = 99.50% ===== */
+const FEE = { 1: 100000, 2: 125000 };          // 当月服务费，元（4.4）
+const TIERS = [                                  // 从高到低：[下限(含), 比例, 条款]
+  { min: 9990, rate: 0,    clause: "",    label: "不低于 99.9%，达标" },
+  { min: 9950, rate: 0.05, clause: "6.1", label: "低于 99.9% 但不低于 99.5%" },
+  { min: 9900, rate: 0.10, clause: "6.2", label: "低于 99.5% 但不低于 99.0%" },
+  { min: -1,   rate: 0.20, clause: "6.3", label: "低于 99.0%" },
+];
+
+function compute(bp, year) {
+  const fee = FEE[year];
+  const tier = TIERS.find(t => bp >= t.min);
+  const value = Math.round(fee * tier.rate);
+  const down = (10000 - bp) / 10000;             // 不可用比例
+  const steps = [
+    tier.clause ? `可用率 ${a(bp)}%，落在「${tier.label}」（${tier.clause} 条）` : `可用率 ${a(bp)}%，达标（承诺线 99.9%，5.1 条）`,
+    `当月服务费 ${yuan(fee)} 元（${year === 1 ? "首年" : "第二、三年"}，4.4 条）`,
+    tier.rate ? `${yuan(fee)} × ${tier.rate * 100}% = ${yuan(value)} 元，抵减下期服务费（6.5 条）` : "不抵扣",
+    `相当于本月计入的不可用时间：30 天的月份约 ${Math.round(down * 43200)} 分钟，31 天的月份约 ${Math.round(down * 44640)} 分钟（按 5.1 条公式反推）`,
+  ];
+  const note = tier.rate === 0 ? "达标，不抵扣"
+    : bp === 9950 || bp === 9900 ? `正好压在 ${a(bp)}% 线上，按较轻的一档算`
+    : tier.rate === 0.2 ? "已是最高一档，再低也还是 20%" : "";
+  const warn = bp < 9950 ? "本月低于 99.5%：计入 6.4 条解约权的统计。连续 3 个月，或任意 12 个月内累计 4 个月低于 99.5%，甲方（我行）可单方解约且无需承担违约责任。" : "";
+  return { value, rate: tier.rate, note, steps, warn };
+}
+
+const a = bp => (bp / 100).toFixed(2);
+const yuan = n => n.toLocaleString("zh-CN");
+const $ = id => document.getElementById(id);
+const state = { bp: 9960, year: 2 };
+
+function render() {
+  const r = compute(state.bp, state.year);
+  $("avail").value = state.bp;
+  $("avail-out").textContent = a(state.bp);
+  $("out-amount").textContent = yuan(r.value);
+  $("out-note").textContent = r.note;
+  $("out-warn").textContent = r.warn;
+  const ol = $("out-steps"); ol.replaceChildren();
+  r.steps.forEach(s => { const li = document.createElement("li"); li.textContent = s; ol.append(li); });
+  drawChart();
+}
+
+function drawChart() {
+  const svg = $("chart"), W = Math.max(300, svg.clientWidth || 840), H = 200, L = 8, R = 12, T = 28, B = 30;
+  const minX = 9850, maxX = 10000, maxY = 25000;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = v => L + ((v - minX) / (maxX - minX)) * (W - L - R), y = v => H - B - (v / maxY) * (H - T - B);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, at, text) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (text != null) e.textContent = text; return e; };
+  svg.replaceChildren();
+  svg.append(el("line", { x1: L, y1: H - B, x2: W - R, y2: H - B, stroke: "var(--line)" }));
+  [9900, 9950, 9990].forEach(v => svg.append(el("line", { x1: x(v), y1: T - 6, x2: x(v), y2: H - B, stroke: "var(--line)", "stroke-dasharray": "3 3" })));
+  let d = "";
+  for (let v = minX; v <= maxX; v++) d += `${v === minX ? "M" : "L"}${x(v).toFixed(1)} ${y(compute(v, state.year).value).toFixed(1)}`;
+  svg.append(el("path", { d, fill: "none", stroke: "var(--ink-2)", "stroke-width": 1.5 }));
+  const cur = compute(state.bp, state.year).value;
+  svg.append(el("circle", { cx: x(state.bp), cy: y(cur), r: 6, fill: "var(--accent)" }));
+  [[9850, "98.5%", "start"], [9900, "99.0%", "middle"], [9950, "99.5%", "middle"], [10000, "100%", "end"]]
+    .forEach(([v, s, anc]) => svg.append(el("text", { x: x(v), y: H - 10, "text-anchor": anc, "font-size": 13, fill: "var(--ink-2)" }, s)));
+  svg.append(el("text", { x: x(9990) - 4, y: T - 10, "text-anchor": "end", "font-size": 13, fill: "var(--ink-2)" }, "99.9% 线"));
+  svg.append(el("text", { x: L, y: T - 10, "font-size": 13, fill: "var(--ink-2)" }, `抵扣（元，最高 ${yuan(FEE[state.year] * 0.2)}）`));
+}
+
+$("avail").addEventListener("input", e => { state.bp = +e.target.value; render(); });
+document.querySelector(".nudge").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.bp = b.dataset.set ? +b.dataset.set : Math.min(10000, Math.max(9850, state.bp + +b.dataset.d));
+  render();
+});
+$("year").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.year = +b.dataset.v;
+  [...$("year").children].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+});
+$("guess").addEventListener("click", e => {
+  const b = e.target.closest("button[data-guess]"); if (!b) return;
+  const A = compute(9950, 2), C = compute(9949, 2);
+  const ratio = C.value / A.value;
+  const truth = ratio >= 3.5 ? "quad" : ratio >= 1.5 ? "double" : "tiny";
+  const word = { tiny: "几乎不变", double: "翻一倍", quad: "变成 4 倍" }[truth];
+  const box = $("guess-reveal");
+  box.textContent = `${b.dataset.guess === truth ? "猜对了" : "没猜对"}，答案是${word}：` +
+    `99.50% 时抵扣 ${yuan(A.value)} 元——${A.steps[0]}，${A.steps[2]}。` +
+    `99.49% 时抵扣 ${yuan(C.value)} 元——${C.steps[0]}，${C.steps[2]}。` +
+    `抵扣按所在档位整笔乘比例，不按差了多少线性算，所以差 0.01 个百分点就可能跨档。`;
+  box.classList.add("show");
+});
+
+window.addEventListener("resize", drawChart);
+render();
+</script>
+</body>
+</html>

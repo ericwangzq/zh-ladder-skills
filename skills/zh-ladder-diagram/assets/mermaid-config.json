@@ -1,0 +1,19 @@
+{
+  "theme": "neutral",
+  "themeVariables": {
+    "fontFamily": "'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif",
+    "fontSize": "14px",
+    "primaryColor": "#ffffff",
+    "primaryBorderColor": "#8f959e",
+    "primaryTextColor": "#1f2329",
+    "lineColor": "#8f959e",
+    "mainBkg": "#ffffff",
+    "nodeBorder": "#8f959e",
+    "clusterBkg": "#f5f6f7"
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "curve": "basis",
+    "padding": 12
+  }
+}

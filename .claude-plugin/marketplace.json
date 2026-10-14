@@ -1,0 +1,16 @@
+{
+  "name": "zh-ladder-skills",
+  "owner": {
+    "name": "Eric Wang"
+  },
+  "metadata": {
+    "description": "中文理解阶梯：把模型输出变成中文读者容易看懂、容易核对的形式。"
+  },
+  "plugins": [
+    {
+      "name": "zh-ladder",
+      "source": "./",
+      "description": "中文受控写作、讲解图、交互讲解页。"
+    }
+  ]
+}

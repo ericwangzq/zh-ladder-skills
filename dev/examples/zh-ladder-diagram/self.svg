@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1048" role="img" aria-label="模型按规范手算坐标写 SVG，再放进真实浏览器量字、截图"
+     font-family="'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8f959e"/>
+    </marker>
+  </defs>
+
+  <!-- 标题 -->
+  <text x="32" y="48" font-size="18" font-weight="600" fill="#1f2329">模型按规范手算坐标写 SVG，再放进真实浏览器量字、截图</text>
+
+  <!-- 区块标题与分隔线 -->
+  <text x="32" y="96" font-size="14" font-weight="600" fill="#1f2329">① 模型写图</text>
+  <text x="520" y="96" font-size="14" font-weight="600" fill="#1f2329">② 浏览器检查与出图（Python 脚本）</text>
+  <path d="M480 80V992" stroke="#dee0e3" stroke-width="1"/>
+
+  <!-- 连线 -->
+  <g fill="none" stroke="#8f959e" stroke-width="1.5">
+    <path d="M144 184V208" marker-end="url(#arrow)"/>
+    <path d="M248 252H296" marker-end="url(#arrow)"/>
+    <path d="M144 296V332" marker-end="url(#arrow)"/>
+    <path d="M144 396V436" marker-end="url(#arrow)"/>
+    <path d="M256 492H520" marker-end="url(#arrow)"/>
+    <path d="M724 204V332" marker-end="url(#arrow)"/>
+    <path d="M724 516V556" marker-end="url(#arrow)"/>
+    <path d="M620 600H144V548" marker-end="url(#arrow)"/>
+    <path d="M724 644V684" marker-end="url(#arrow)"/>
+    <path d="M724 756V796" marker-end="url(#arrow)"/>
+    <path d="M724 868V908" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="12" fill="#646a73">
+    <text x="272" y="244" text-anchor="middle">没有</text>
+    <text x="152" y="318">有</text>
+    <text x="388" y="484" text-anchor="middle">图.svg</text>
+    <text x="732" y="272">确认能渲染中文</text>
+    <text x="380" y="592" text-anchor="middle">有：改坐标、断行，再查</text>
+    <text x="732" y="668">没有</text>
+  </g>
+
+  <!-- ① 节点 -->
+  <g>
+    <rect x="32" y="120" width="224" height="64" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="148" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">原文 + 任务</text>
+    <text x="144" y="170" text-anchor="middle" font-size="13" fill="#1f2329">命令后的文字或文件</text>
+  </g>
+  <g>
+    <polygon points="40,252 144,208 248,252 144,296" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="257" text-anchor="middle" font-size="13" fill="#1f2329">内容有结构吗？</text>
+  </g>
+  <g>
+    <rect x="296" y="220" width="144" height="64" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="368" y="248" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">不画</text>
+    <text x="368" y="270" text-anchor="middle" font-size="13" fill="#1f2329">改用文字或表格</text>
+  </g>
+  <g>
+    <rect x="32" y="332" width="224" height="64" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="360" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">选图型，写一句结论</text>
+    <text x="144" y="382" text-anchor="middle" font-size="13" fill="#1f2329">选图.md：9 种图型</text>
+  </g>
+  <g>
+    <rect x="32" y="436" width="224" height="112" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="466" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">手写 SVG（默认）</text>
+    <text x="144" y="490" text-anchor="middle" font-size="13" fill="#1f2329">按规范算框宽、手动断行</text>
+    <text x="144" y="510" text-anchor="middle" font-size="13" fill="#1f2329">从 模板.svg 起手</text>
+    <text x="144" y="530" text-anchor="middle" font-size="13" fill="#1f2329">点名要时改用 Mermaid</text>
+  </g>
+
+  <!-- ② 节点 -->
+  <g>
+    <rect x="580" y="120" width="288" height="84" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="724" y="148" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">doctor.py：环境自检</text>
+    <text x="724" y="172" text-anchor="middle" font-size="13" fill="#1f2329">读出浏览器实际用到的字体</text>
+    <text x="724" y="192" text-anchor="middle" font-size="13" fill="#1f2329">没有中文字体就提示安装</text>
+  </g>
+  <g>
+    <rect x="520" y="332" width="408" height="184" rx="8" fill="#3370ff" fill-opacity="0.08" stroke="#3370ff" stroke-width="2"/>
+    <text x="544" y="362" font-size="14" font-weight="600" fill="#1f2329">svg_check.py：在浏览器里量每行字</text>
+    <text x="544" y="390" font-size="13" fill="#1f2329">Playwright 启动 Chromium，失败退回系统 Chrome</text>
+    <text x="544" y="414" font-size="13" fill="#1f2329">按 viewBox 开页，等字体加载完</text>
+    <text x="544" y="438" font-size="13" fill="#1f2329">JS 读每行文字的真实边界（getBoundingClientRect）</text>
+    <text x="544" y="462" font-size="13" fill="#1f2329">判断四类：出框、出画布、互相压住、省略号截断</text>
+    <text x="544" y="486" font-size="13" fill="#1f2329">文字归哪个框：看文字中心落在最小的哪个框里</text>
+  </g>
+  <g>
+    <polygon points="620,600 724,556 828,600 724,644" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="724" y="605" text-anchor="middle" font-size="13" fill="#1f2329">检查出问题？</text>
+  </g>
+  <g>
+    <rect x="580" y="684" width="288" height="72" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="724" y="714" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">导出 PNG</text>
+    <text x="724" y="738" text-anchor="middle" font-size="13" fill="#1f2329">同一浏览器截图，2 倍清晰度</text>
+  </g>
+  <g>
+    <rect x="580" y="796" width="288" height="72" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="724" y="826" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">人看 PNG，对原文核对</text>
+    <text x="724" y="850" text-anchor="middle" font-size="13" fill="#1f2329">方块、穿线、太挤；每条线都有出处</text>
+  </g>
+  <g>
+    <rect x="580" y="908" width="288" height="72" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="724" y="938" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">交付 SVG + PNG + 读法</text>
+    <text x="724" y="962" text-anchor="middle" font-size="13" fill="#1f2329">图下一两句：先看哪里、虚线什么意思</text>
+  </g>
+
+  <!-- 图例 -->
+  <rect x="32" y="1004" width="20" height="16" rx="4" fill="#3370ff" fill-opacity="0.08" stroke="#3370ff" stroke-width="2"/>
+  <text x="64" y="1017" font-size="12" fill="#646a73">蓝框：技术核心。检查用的是真实浏览器和真实字体，不是按公式估算</text>
+</svg>

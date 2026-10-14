@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 880" role="img" aria-label="先过三道门槛才能申报；补贴等于全部投入乘以所在档比例，再按上限封顶"
+     font-family="'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8f959e"/>
+    </marker>
+  </defs>
+
+  <text x="32" y="48" font-size="18" font-weight="600" fill="#1f2329">先过三道门槛才能申报；补贴 = 全部投入 × 所在档比例，再按上限封顶</text>
+  <text x="32" y="74" font-size="12" fill="#646a73">据《某市中小企业数字化改造专项补贴实施细则（2027 年修订）》解读整理（原文为虚构政策示例）</text>
+
+  <text x="32" y="120" font-size="14" font-weight="600" fill="#1f2329">① 能不能申请</text>
+  <text x="512" y="120" font-size="14" font-weight="600" fill="#1f2329">② 能拿多少</text>
+
+  <!-- 左侧连线 -->
+  <g fill="none" stroke="#8f959e" stroke-width="1.5">
+    <path d="M256 192H296" marker-end="url(#arrow)"/>
+    <path d="M144 244V280" marker-end="url(#arrow)"/>
+    <path d="M256 332H296" marker-end="url(#arrow)"/>
+    <path d="M144 384V420" marker-end="url(#arrow)"/>
+    <path d="M256 476H296" marker-end="url(#arrow)"/>
+    <path d="M144 532V568" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="12" fill="#646a73">
+    <text x="276" y="184" text-anchor="middle">否</text>
+    <text x="152" y="266">是</text>
+    <text x="276" y="324" text-anchor="middle">有</text>
+    <text x="152" y="406">没有</text>
+    <text x="276" y="468" text-anchor="middle">否</text>
+    <text x="152" y="554">是</text>
+  </g>
+
+  <!-- 左侧节点 -->
+  <g>
+    <polygon points="32,192 144,140 256,192 144,244" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="190" text-anchor="middle" font-size="13" fill="#1f2329">本市注册的中小企业？</text>
+    <text x="144" y="208" text-anchor="middle" font-size="12" fill="#646a73">独立法人、依法纳税</text>
+  </g>
+  <g>
+    <rect x="296" y="168" width="184" height="48" rx="8" fill="#ffffff" stroke="#f54a45" stroke-width="1.5"/>
+    <text x="388" y="197" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">不属于补贴对象</text>
+  </g>
+
+  <g>
+    <polygon points="32,332 144,280 256,332 144,384" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="337" text-anchor="middle" font-size="13" fill="#1f2329">有排除情形？</text>
+  </g>
+  <g>
+    <rect x="296" y="264" width="184" height="136" rx="8" fill="#ffffff" stroke="#f54a45" stroke-width="1.5"/>
+    <text x="388" y="292" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">不属于补贴对象</text>
+    <text x="388" y="316" text-anchor="middle" font-size="13" fill="#1f2329">近 3 年有严重失信记录</text>
+    <text x="388" y="340" text-anchor="middle" font-size="13" fill="#1f2329">与已享市级数字化补贴</text>
+    <text x="388" y="358" text-anchor="middle" font-size="13" fill="#1f2329">的项目内容重复</text>
+    <text x="388" y="382" text-anchor="middle" font-size="13" fill="#1f2329">申报时仍在经营异常名录</text>
+  </g>
+
+  <g>
+    <polygon points="32,476 144,420 256,476 144,532" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="144" y="466" text-anchor="middle" font-size="13" fill="#1f2329">项目实际投入</text>
+    <text x="144" y="484" text-anchor="middle" font-size="13" fill="#1f2329">≥ 20 万？</text>
+    <text x="144" y="502" text-anchor="middle" font-size="12" fill="#646a73">专精特新 ≥ 10 万</text>
+  </g>
+  <g>
+    <rect x="296" y="452" width="184" height="48" rx="8" fill="#ffffff" stroke="#f54a45" stroke-width="1.5"/>
+    <text x="388" y="481" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">不予补贴</text>
+  </g>
+
+  <g>
+    <rect x="32" y="568" width="448" height="128" rx="8" fill="#ffffff" stroke="#2ea121" stroke-width="1.5"/>
+    <text x="48" y="596" font-size="14" font-weight="600" fill="#1f2329">可以申报（还须通过专家评审）</text>
+    <text x="48" y="618" font-size="13" fill="#1f2329">项目在 2027 年 1 月 1 日之后验收</text>
+    <text x="48" y="638" font-size="13" fill="#1f2329">验收后赶最近一批申报，错过最多顺延一批</text>
+    <text x="48" y="658" font-size="13" fill="#1f2329">每年两批：3 月 1 日–4 月 30 日、9 月 1 日–10 月 31 日</text>
+    <text x="48" y="678" font-size="13" fill="#1f2329">合同、发票、付款凭证三者金额一致</text>
+  </g>
+
+  <!-- 右侧连线 -->
+  <g fill="none" stroke="#8f959e" stroke-width="1.5">
+    <path d="M616 328V360" marker-end="url(#arrow)"/>
+    <path d="M720 416H760" marker-end="url(#arrow)"/>
+    <path d="M616 472V520" marker-end="url(#arrow)"/>
+    <path d="M844 456V520" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="12" fill="#646a73">
+    <text x="740" y="408" text-anchor="middle">是</text>
+    <text x="624" y="500">否</text>
+  </g>
+
+  <!-- 右侧节点 -->
+  <g>
+    <rect x="512" y="136" width="416" height="192" rx="8" fill="#3370ff" fill-opacity="0.08" stroke="#3370ff" stroke-width="2"/>
+    <text x="528" y="164" font-size="14" font-weight="600" fill="#1f2329">按全部投入定档，整笔乘该档比例</text>
+    <text x="528" y="184" font-size="13" fill="#1f2329">不分段累进；同一项目拆开申报也按合并总额定档</text>
+    <g font-size="12" fill="#646a73">
+      <text x="528" y="212">项目实际投入（下限含）</text>
+      <text x="744" y="212" text-anchor="middle">比例</text>
+      <text x="912" y="212" text-anchor="end">单个项目上限</text>
+    </g>
+    <path d="M528 220H912M528 246H912M528 272H912M528 298H912" stroke="#dee0e3" stroke-width="1" fill="none"/>
+    <g font-size="13" fill="#1f2329">
+      <text x="528" y="238">20 万–100 万</text>
+      <text x="744" y="238" text-anchor="middle">30%</text>
+      <text x="912" y="238" text-anchor="end">25 万</text>
+      <text x="528" y="264">100 万–300 万</text>
+      <text x="744" y="264" text-anchor="middle">25%</text>
+      <text x="912" y="264" text-anchor="end">60 万</text>
+      <text x="528" y="290">300 万–1,000 万</text>
+      <text x="744" y="290" text-anchor="middle">20%</text>
+      <text x="912" y="290" text-anchor="end">150 万</text>
+      <text x="528" y="316">1,000 万以上</text>
+      <text x="744" y="316" text-anchor="middle">15%</text>
+      <text x="912" y="316" text-anchor="end">200 万</text>
+    </g>
+  </g>
+
+  <g>
+    <polygon points="512,416 616,360 720,416 616,472" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="616" y="412" text-anchor="middle" font-size="13" fill="#1f2329">信创投入占 50% 以上，</text>
+    <text x="616" y="430" text-anchor="middle" font-size="13" fill="#1f2329">或是市级专精特新？</text>
+  </g>
+  <g>
+    <rect x="760" y="376" width="168" height="80" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="844" y="404" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2329">比例 +5 个百分点</text>
+    <text x="844" y="424" text-anchor="middle" font-size="13" fill="#1f2329">两项都满足</text>
+    <text x="844" y="442" text-anchor="middle" font-size="13" fill="#1f2329">也只加一次</text>
+  </g>
+
+  <g>
+    <rect x="512" y="520" width="416" height="112" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5"/>
+    <text x="528" y="548" font-size="14" font-weight="600" fill="#1f2329">算出的数再封顶，取较小者</text>
+    <text x="528" y="570" font-size="13" fill="#1f2329">单个项目：不超过所在档上限（上浮后也一样）</text>
+    <text x="528" y="590" font-size="13" fill="#1f2329">同一企业：同一自然年度累计不超过 200 万</text>
+    <text x="528" y="610" font-size="13" fill="#1f2329">同一集团：下属各法人年度合计不超过 500 万</text>
+  </g>
+
+  <g>
+    <rect x="512" y="648" width="416" height="48" rx="8" fill="#ffffff" stroke="#8f959e" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="720" y="668" text-anchor="middle" font-size="13" fill="#1f2329">专精特新投入 10 万–20 万的项目也能 +5？</text>
+    <text x="720" y="686" text-anchor="middle" font-size="12" fill="#646a73">主管部门称“原则上可以”，以评审为准，尚无审结案例</text>
+  </g>
+
+  <!-- 底部：算例与投入口径 -->
+  <text x="32" y="736" font-size="13" fill="#1f2329"><tspan font-weight="600">原文算例：</tspan>专精特新企业投入 90 万 → 30% 上浮 5 个百分点 = 35% → 31.5 万 → 超过第一档 25 万上限，实拿 25 万</text>
+
+  <g>
+    <line x1="32" y1="756" x2="928" y2="756" stroke="#dee0e3"/>
+    <text x="32" y="784" font-size="13" fill="#1f2329"><tspan font-weight="600">算进投入：</tspan>软件采购、硬件采购、云服务费、第三方实施服务费</text>
+    <text x="32" y="808" font-size="13" fill="#1f2329"><tspan font-weight="600">不算：</tspan>内部人员工资和差旅；关联公司、股东或个人代付；跨年项目在 2027 年 1 月 1 日前支付的；未付的尾款</text>
+  </g>
+
+  <!-- 图例 -->
+  <g font-size="12" fill="#646a73">
+    <rect x="32" y="836" width="16" height="16" rx="4" fill="#ffffff" stroke="#f54a45"/>
+    <text x="56" y="848">红框：拿不到</text>
+    <rect x="160" y="836" width="16" height="16" rx="4" fill="#ffffff" stroke="#2ea121"/>
+    <text x="184" y="848">绿框：可以申报</text>
+    <rect x="304" y="836" width="16" height="16" rx="4" fill="#3370ff" fill-opacity="0.08" stroke="#3370ff"/>
+    <text x="328" y="848">蓝框：补贴怎么算</text>
+    <line x1="464" y1="844" x2="504" y2="844" stroke="#8f959e" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="512" y="848">虚线和「？」：口头表态，尚无实际案例</text>
+  </g>
+</svg>

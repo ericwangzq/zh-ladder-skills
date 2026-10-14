@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>高峰排队与加卡</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f7f8fa; --line: #dee0e3;
+    --ink: #1f2329; --ink-2: #646a73;
+    --accent: #3370ff; --accent-soft: rgba(51,112,255,.08);
+    --bad: #d83931; --good: #2ea121; --warn: #de7802;
+    --wgt: #8f959e; --on-wgt: #ffffff; --ovh: #c4c8ce; --slot: #e3e7ee;
+    --font: "PingFang SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;
+    --num: "SF Mono","JetBrains Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17181a; --surface: #202124; --line: #34363a;
+      --ink: #e8e9eb; --ink-2: #a3a6ad;
+      --accent: #5b8cff; --accent-soft: rgba(91,140,255,.14);
+      --bad: #f06a62; --good: #4cc35a; --warn: #f0a040;
+      --wgt: #6b7079; --on-wgt: #f2f3f5; --ovh: #4a4e55; --slot: #2c2f34;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 var(--font); }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 24px; line-height: 1.4; margin: 0 0 8px; }
+  h2 { font-size: 17px; margin: 40px 0 12px; }
+  .lead { color: var(--ink-2); margin: 0 0 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 21px; } }
+  label, .lbl { display: block; font-weight: 600; margin: 0 0 4px; }
+  .hint { color: var(--ink-2); font-size: 13px; }
+  .control { margin-bottom: 18px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .val { font-family: var(--num); }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button, .guess button, .preset {
+    font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .big { font-family: var(--num); font-size: 36px; font-weight: 700; line-height: 1.2; }
+  .big.bad { color: var(--bad); }
+  .result-note { margin-top: 8px; font-weight: 600; }
+  .result-note:empty { display: none; }
+  .steps { margin: 12px 0 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; }
+  .steps li { overflow-wrap: anywhere; }
+  .measured { margin-top: 12px; padding: 8px 10px; border-radius: 8px; border: 1px dashed var(--line); font-size: 14px; }
+  .guess { margin-top: 24px; }
+  .guess .opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .reveal { display: none; padding: 12px; border-radius: 8px; background: var(--accent-soft); }
+  .reveal.show { display: block; }
+  .tag { display: inline-block; font-size: 12px; padding: 0 8px; border-radius: 10px; border: 1px solid currentColor; margin-left: 6px; white-space: nowrap; }
+  .tag.src { color: var(--good); } .tag.calc { color: var(--accent); } .tag.none { color: var(--warn); }
+  ul.plain { padding-left: 20px; } ul.plain li { margin: 4px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .tbl-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 14px; width: 100%; min-width: 460px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  tr.hit td { background: var(--accent-soft); font-weight: 600; }
+  svg text { font-family: var(--font); }
+  footer { margin-top: 40px; font-size: 13px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="conclusion">一张卡同时最多处理约 18 个 9,000 token 的请求，高峰 26 个就有约 8 个在排队；再加一张卡（两张各跑一份模型），理论上容量翻倍到约 36 个，按推算高峰就不用排队</h1>
+  <p class="lead">拖动「同时在用的请求数」，看有几个在处理、几个在排队；再切到「2 张卡」，看加卡能缓解多少。数字按冯工技术说明的数据推算；「高峰变慢主要是排队造成的」是平台组根据压测推断的，尚未在生产日志中直接验证。</p>
+
+  <section class="grid">
+    <div class="card">
+      <div class="control">
+        <label for="conc">同时在用的请求数：<span class="val" id="conc-out"></span> 个</label>
+        <input id="conc" type="range" min="1" max="60" step="1" value="26">
+        <div class="hint">试点日志：工作日 9:30–10:30 峰值约 26 个</div>
+      </div>
+      <div class="control">
+        <div class="lbl" id="ctx-lbl">每个请求的上下文长度（文件 + 提问）</div>
+        <div class="seg" id="ctx" role="group" aria-labelledby="ctx-lbl">
+          <button type="button" data-v="2000" aria-pressed="false">2,000</button>
+          <button type="button" data-v="8000" aria-pressed="false">8,000（约 6 千字文件）</button>
+          <button type="button" data-v="9000" aria-pressed="true">9,000（试点平均）</button>
+          <button type="button" data-v="16000" aria-pressed="false">16,000（方案 B 上限）</button>
+          <button type="button" data-v="32000" aria-pressed="false">32,000（约 2.5 万字）</button>
+        </div>
+        <div class="hint">单位 token，一个汉字约 1 到 1.5 个 token。页面按「所有请求都一样长」来算</div>
+      </div>
+      <div class="control">
+        <div class="lbl" id="gpu-lbl">GPU 数量</div>
+        <div class="seg" id="gpu" role="group" aria-labelledby="gpu-lbl">
+          <button type="button" data-v="1" aria-pressed="true">1 张（现状）</button>
+          <button type="button" data-v="2" aria-pressed="false">2 张，各跑一份模型（方案 D）</button>
+        </div>
+        <div class="hint">如果用两张卡跑一个更大的模型（如 700 亿参数），并发不会翻倍，甚至可能下降；原文没给数字，本页不算</div>
+      </div>
+      <button type="button" class="preset" id="preset">回到试点高峰：26 个、9,000 token、1 张卡</button>
+    </div>
+    <div class="card" aria-live="polite">
+      <div class="hint">正在排队的请求</div>
+      <div class="big" id="out-big"><span id="out-queue"></span> 个</div>
+      <div class="result-note" id="out-note"></div>
+      <ol class="steps" id="out-steps"></ol>
+      <div class="measured" id="out-measured"></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:20px">
+    <div class="hint">每张卡 80 GB 显存怎么分，以及每个请求在哪</div>
+    <svg id="chart" role="img" aria-label="显存分配与请求处理、排队示意" width="100%" height="200"></svg>
+    <div class="legend">
+      <span><i style="background:var(--wgt)"></i>模型权重 约 32 GB</span>
+      <span><i style="background:var(--ovh)"></i>运行时开销 约 6 GB</span>
+      <span><i style="background:var(--accent)"></i>正在处理的请求（占一格缓存）</span>
+      <span><i style="background:var(--slot)"></i>空闲缓存</span>
+      <span><i style="background:var(--bad)"></i>排队的请求</span>
+    </div>
+  </section>
+
+  <section class="card guess" id="guess">
+    <label>先猜一下：试点高峰（26 个请求、平均 9,000 token），加一张卡（两张卡各跑一份模型）后，排队的请求会怎样？</label>
+    <div class="opts">
+      <button type="button" data-guess="half">大约减半</button>
+      <button type="button" data-guess="zero">基本不用排队了</button>
+      <button type="button" data-guess="same">变化不大</button>
+    </div>
+    <div class="reveal" id="guess-reveal"></div>
+  </section>
+
+  <h2>加卡解决不了的：长文件本身就慢</h2>
+  <p>就算只有 1 个人在用，提交 32,000 token 的长文件，实测也要等约 7.2 秒才开始出字，这是模型「读」整份文件的时间。原文说增加 GPU「也只能有限缩短」这部分，没给出能缩短多少。排队一旦超过 120 秒，系统会返回「服务繁忙，请稍后再试」；过去两周出现过 47 次，全部在 9:30–10:30。</p>
+
+  <h2>压测实测值（原文第三节）</h2>
+  <p class="hint">每个请求输出 500 token，测 30 分钟取平均。当前参数如果正好有实测值，会高亮那一行。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>上下文长度</th><th>并发数</th><th>首字等待</th><th>输出速度（token/秒/请求）</th><th>排队</th></tr></thead>
+      <tbody id="tbl"></tbody>
+    </table>
+  </div>
+
+  <h2>这页按什么算</h2>
+  <ul class="plain">
+    <li>1 张 80 GB 显存：模型权重约 32 GB、运行时约 6 GB，剩下约 42 GB 做上下文缓存 <span class="tag src">原文第二节</span></li>
+    <li>每个 token 约占 0.25 MB 缓存，42 GB 约能容纳 17 万 token <span class="tag src">原文第二节</span></li>
+    <li>能同时处理的请求数 = 17 万 ÷ 每个请求的上下文长度，取整数（8,000 → 约 21 个，32,000 → 约 5 个，16,000 → 约 10 个，与原文一致） <span class="tag src">原文第二节、第五节方案 B</span></li>
+    <li>9,000 token、2,000 token 时的容量（约 18 个、约 85 个），以及高峰 26 个请求时约 8 个排队、加卡后 0 个排队 <span class="tag calc">按原文条款推算</span></li>
+    <li>超过容量的请求不会被拒绝，而是排队等前面的请求释放缓存 <span class="tag src">原文第二节</span></li>
+    <li>加 1 张卡、两张卡各跑一份模型，并发能力约翻倍（这是理论推算） <span class="tag src">原文第五节方案 D</span></li>
+    <li>排队的人要等多少秒：原文只有几组实测值，没有给出计算方法，所以本页只数「几个在排队」，不估秒数 <span class="tag none">原文未说明</span></li>
+  </ul>
+
+  <h2>本页不能告诉你什么</h2>
+  <ul class="plain">
+    <li>每个人要等几秒：见上面的实测表；其余组合原文未说明。</li>
+    <li>真实请求长短不一：本页把所有请求按同一长度算。原文提到，实际中多数请求远小于上限，实际并发能力会高于这种最坏情况。</li>
+    <li>其他方案的效果：前缀缓存（A，已上线，命中率约 35%，命中时首字等待约减少 40%）、改 int4 量化（C，仅为提议，财政场景未测）、错峰（E）都没放进计算。</li>
+    <li>花多少钱：加卡硬件约 25 万元是市场询价，未正式报价；从下单到上线预计 6 至 8 周。方案组合尚未与客户沟通，需要客户信息中心确认。</li>
+  </ul>
+
+  <footer>本页不联网、不保存任何输入。资料来源：AI 平台组冯工《关于私有化大模型"高峰期变慢、长文档变慢"问题的技术说明》。</footer>
+</main>
+
+<script>
+/* ===== 规则：都来自技术说明第二、三、五节 ===== */
+const CACHE_TOKENS = 170000;          // 42 GB ÷ 0.25 MB/token ≈ 17 万 token（第二节）
+const MEASURED = [                    // 第三节压测表
+  [2000, 1, 0.4, 35, false], [2000, 20, 0.9, 22, false],
+  [8000, 1, 1.5, 33, false], [8000, 20, 3.1, 18, false], [8000, 30, 11.6, 18, true],
+  [32000, 1, 7.2, 28, false], [32000, 5, 9.8, 21, false], [32000, 10, 38.5, 21, true],
+];
+
+function compute(n, ctx, gpus) {
+  const perGpu = Math.floor(CACHE_TOKENS / ctx);
+  const cap = perGpu * gpus;
+  const running = Math.min(n, cap), queue = n - running;
+  const steps = [
+    `每张卡缓存约 17 万 token ÷ 每个请求 ${f(ctx)} token ≈ ${perGpu} 个请求`,
+    gpus === 2 ? `2 张卡各跑一份模型：${perGpu} × 2 = ${cap} 个（理论推算）` : `1 张卡：同时最多处理 ${cap} 个`,
+    `${n} 个请求：${running} 个在处理，${queue} 个在排队`,
+  ];
+  const m = MEASURED.find(r => r[0] === ctx && r[1] === n && gpus === 1);
+  return { perGpu, cap, running, queue, steps, m };
+}
+
+const f = n => n.toLocaleString("zh-CN");
+const $ = id => document.getElementById(id);
+const state = { n: 26, ctx: 9000, gpus: 1 };
+
+function render() {
+  const r = compute(state.n, state.ctx, state.gpus);
+  $("conc").value = state.n;
+  $("conc-out").textContent = state.n;
+  $("out-queue").textContent = r.queue;
+  $("out-big").classList.toggle("bad", r.queue > 0);
+  $("out-note").textContent = r.queue > 0
+    ? `超出容量 ${r.queue} 个：它们要等前面的请求做完、释放缓存才能开始`
+    : `没有排队：还剩 ${r.cap - r.running} 个空位`;
+  const ol = $("out-steps"); ol.replaceChildren();
+  r.steps.forEach(s => { const li = document.createElement("li"); li.textContent = s; ol.append(li); });
+  $("out-measured").textContent = r.m
+    ? `这组参数有实测值：首字等待 ${r.m[2]} 秒，${r.m[4] ? "出现排队" : "没有排队"}（原文第三节）。`
+    : "这组参数没有实测值。排队的请求具体要多等几秒，原文未说明计算方法；超过 120 秒会提示「服务繁忙」。";
+  syncPressed("ctx", state.ctx); syncPressed("gpu", state.gpus);
+  renderTable(r.m);
+  drawChart(r);
+}
+
+function syncPressed(id, v) { [...$(id).children].forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.v === v))); }
+
+function renderTable(hit) {
+  const tb = $("tbl"); tb.replaceChildren();
+  MEASURED.forEach(row => {
+    const tr = document.createElement("tr");
+    if (row === hit) tr.className = "hit";
+    [f(row[0]), row[1], `${row[2]} 秒`, row[3], row[4] ? "是" : "否"].forEach(v => {
+      const td = document.createElement("td"); td.textContent = v; tr.append(td);
+    });
+    tb.append(tr);
+  });
+}
+
+function drawChart(r) {
+  const svg = $("chart"), W = Math.max(300, svg.clientWidth || 840), L = 2, R = 2;
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, at, text) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (text != null) e.textContent = text; return e; };
+  svg.replaceChildren();
+  const barW = W - L - R, barH = 26, scale = barW / 80;
+  let yy = 4;
+  // 每张卡一条显存条
+  let left = r.running;
+  for (let g = 0; g < state.gpus; g++) {
+    svg.append(el("text", { x: L, y: yy + 14, "font-size": 13, fill: "var(--ink-2)" }, `第 ${g + 1} 张卡（80 GB）`));
+    yy += 20;
+    svg.append(el("rect", { x: L, y: yy, width: 32 * scale, height: barH, fill: "var(--wgt)" }));
+    svg.append(el("rect", { x: L + 32 * scale, y: yy, width: 6 * scale, height: barH, fill: "var(--ovh)" }));
+    const cx = L + 38 * scale, cw = 42 * scale, slot = cw / r.perGpu;
+    const used = Math.min(left, r.perGpu); left -= used;
+    for (let i = 0; i < r.perGpu; i++) {
+      svg.append(el("rect", { x: cx + i * slot + (slot > 3 ? 0.5 : 0), y: yy, width: Math.max(0.6, slot - (slot > 3 ? 1 : 0)), height: barH, fill: i < used ? "var(--accent)" : "var(--slot)" }));
+    }
+    if (W >= 520) svg.append(el("text", { x: L + 16 * scale, y: yy + 18, "text-anchor": "middle", "font-size": 12, fill: "var(--on-wgt)" }, "权重"));
+    yy += barH + 6;
+    svg.append(el("text", { x: cx, y: yy + 12, "font-size": 12, fill: "var(--ink-2)" }, `缓存 ${r.perGpu} 格，用了 ${used} 格`));
+    yy += 22;
+  }
+  // 排队区
+  svg.append(el("text", { x: L, y: yy + 14, "font-size": 13, fill: "var(--ink-2)" }, r.queue ? `排队中：${r.queue} 个` : "排队中：0 个"));
+  yy += 22;
+  const s = 14, gap = 4, cols = Math.max(1, Math.floor((barW + gap) / (s + gap)));
+  for (let i = 0; i < r.queue; i++) {
+    const c = i % cols, row = Math.floor(i / cols);
+    svg.append(el("rect", { x: L + c * (s + gap), y: yy + row * (s + gap), width: s, height: s, rx: 3, fill: "var(--bad)" }));
+  }
+  yy += r.queue ? Math.ceil(r.queue / cols) * (s + gap) : 0;
+  svg.setAttribute("viewBox", `0 0 ${W} ${yy + 4}`);
+  svg.setAttribute("height", yy + 4);
+}
+
+$("conc").addEventListener("input", e => { state.n = +e.target.value; render(); });
+$("ctx").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.ctx = +b.dataset.v; render(); });
+$("gpu").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.gpus = +b.dataset.v; render(); });
+$("preset").addEventListener("click", () => { Object.assign(state, { n: 26, ctx: 9000, gpus: 1 }); render(); });
+$("guess").addEventListener("click", e => {
+  const b = e.target.closest("button[data-guess]"); if (!b) return;
+  const A = compute(26, 9000, 1), C = compute(26, 9000, 2);
+  const truth = C.queue === 0 ? "zero" : C.queue <= A.queue * 0.6 ? "half" : "same";
+  const word = { half: "大约减半", zero: "基本不用排队了", same: "变化不大" }[truth];
+  const box = $("guess-reveal");
+  box.textContent = `${b.dataset.guess === truth ? "猜对了" : "没猜对"}，答案是${word}。` +
+    `1 张卡：${A.steps.join("；")}。2 张卡：${C.steps.join("；")}。` +
+    `排队不是「人多一点就慢一点」，而是超过容量的那部分整个在等，所以容量一翻倍，${A.queue} 个排队的请求就都能进去。注意「约翻倍」是理论推算，前提是两张卡各跑一份模型。`;
+  box.classList.add("show");
+});
+
+window.addEventListener("resize", () => drawChart(compute(state.n, state.ctx, state.gpus)));
+render();
+</script>
+</body>
+</html>
