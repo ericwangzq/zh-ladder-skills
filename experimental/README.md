@@ -6,10 +6,11 @@
 | --- | --- | --- |
 | `zh-ladder-video` 讲解视频 | 配音、合成、核验脚本已冒烟测试；**Manim 动画部分从未运行过** | 没有完整跑通过一条流程；默认配音 edge-tts 调用的是非官方接口，可能随时失效；渲染耗时，付费配音还要花钱。投入产出比要单独评估。 |
 
-要试用：
+要试用：把目录拷到对应 agent 扫描的位置。
 
 ```bash
-cp -r experimental/zh-ladder-video ~/.claude/skills/
+cp -r experimental/zh-ladder-video ~/.claude/skills/    # Claude Code
+cp -r experimental/zh-ladder-video ~/.agents/skills/    # Codex、pi 都读这里
 ```
 
 依赖：`brew install ffmpeg cairo pango pkg-config && pip install manim edge-tts`；可选 `pip install faster-whisper` 做配音转写核对。

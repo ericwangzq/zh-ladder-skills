@@ -1,11 +1,13 @@
 ---
 name: zh-ladder-video
-description: 做中文讲解视频：3Blue1Brown 风格动画加中文配音和字幕，讲清按步骤展开的过程。先出分镜表，确认后才渲染。实验性，未跑通。手动调用。
-disable-model-invocation: true
-allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
+description: 做中文讲解视频：3Blue1Brown 风格动画加中文配音和字幕，讲清按步骤展开的过程。先出分镜表，确认后才渲染。实验性 skill，完整流程未跑通，默认不安装。
+license: MIT
+compatibility: 需要 Python 3.9+、ffmpeg、Manim、配音来源（默认 edge-tts，走非官方接口，可能随时失效；macOS 可离线用自带的 say）；核验脚本可选 faster-whisper。依赖缺失时明说降级，不冒充成片。
+allowed-tools: Read Grep Glob Write Edit Bash(python3 */scripts/*.py) Bash(manim *)
+metadata:
+  author: Eric Wang
+  version: "0.5.0"
 ---
-
-> 本文里的 `${CLAUDE_SKILL_DIR}` 指这个 SKILL.md 所在的目录。Claude Code 会自动替换；其他 agent 按这个意思理解。
 
 # 中文讲解视频
 
@@ -13,11 +15,15 @@ allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
 
 视频最难核对：画面、声音、动画同时争夺注意力，一个错误裹在精美的动画里，比写在文字里更有说服力。所以本 skill 有两道关：渲染之前先确认分镜，渲染之后逐项核验。
 
-先读底线规则：`${CLAUDE_SKILL_DIR}/references/底线.md`。
+先读底线规则：`references/底线.md`。
 
 ## 用法
 
-本 skill 只在用户手动调用时运行（`/zh-ladder-video`，pi 里是 `/skill:zh-ladder-video`）。命令后面的文字就是任务；要讲解的材料（文件路径或粘贴的文字）没给就先问一句，不要自己找。
+输入：命令后面的文字就是任务；要讲解的材料（文件路径或粘贴的文字）没给就先问一句，不要自己找。
+
+输出：分镜表、配音、成片、字幕，都落在本地（底线第 6 条），不上传、不发布。
+
+**路径约定**：本文里 `references/…`、`scripts/…`、`assets/…` 都相对于**本 SKILL.md 所在的目录**（下称 skill 目录）。你的工作目录不是 skill 目录，跑脚本必须用绝对路径：命令里的 `$SKILL_DIR` 指 skill 目录的绝对路径，**运行前换成实际路径**（加载本 skill 时已经给过你 SKILL.md 的位置）。shell 不会自动展开这个变量。
 
 ## 1. 先出分镜表，等确认
 
@@ -34,7 +40,7 @@ allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
 配音先做，动画按配音的真实时长来排，这样不会音画错位。
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/tts.py 分镜.json --out build/
+python3 "$SKILL_DIR/scripts/tts.py" 分镜.json --out build/
 ```
 
 脚本按分镜逐镜头生成音频，写出每个镜头的时长（`timings.json`）和字幕（`subtitles.srt`）。配音来源可以替换，默认是 edge-tts，Mac 上可以离线用系统自带的 `say`，见 `references/配音.md`。
@@ -58,8 +64,8 @@ manim -qh scene.py Explainer
 ## 4. 合成和核验
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/assemble.py --video <渲染出的 mp4> --build build/ --out 成片.mp4
-python3 ${CLAUDE_SKILL_DIR}/scripts/verify_video.py 成片.mp4 --storyboard 分镜.json --out check/
+python3 "$SKILL_DIR/scripts/assemble.py" --video <渲染出的 mp4> --build build/ --out 成片.mp4
+python3 "$SKILL_DIR/scripts/verify_video.py" 成片.mp4 --storyboard 分镜.json --out check/
 ```
 
 核验脚本会报：音视频时长是否一致、有没有异常长的静音、字幕是否覆盖全片；每两秒抽一帧拼成一张总览图；装了 faster-whisper 的话，把配音转回文字和旁白稿对比。

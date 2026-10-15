@@ -4,15 +4,15 @@
 
 ## 渲染
 
-用 mermaid-cli，必须带上本目录的配置文件，否则中文标点会显示成半宽、带空隙：
+用 mermaid-cli，必须带上本 skill 的配置文件（`$SKILL_DIR` 的用法见 SKILL.md 的路径约定），否则中文标点会显示成半宽、带空隙：
 
 ```bash
-npx -y @mermaid-js/mermaid-cli -i 图.mmd -o 图.svg -c <本 skill 目录>/assets/mermaid-config.json
+npx -y @mermaid-js/mermaid-cli -i 图.mmd -o 图.svg -c "$SKILL_DIR/assets/mermaid-config.json"
 ```
 
 已经装了 Chromium 但 mermaid-cli 自己下载浏览器失败时，设置 `PUPPETEER_SKIP_DOWNLOAD=1` 安装，再用 `-p` 指定一个 puppeteer 配置文件，在里面写 `executablePath` 指向已有的 Chrome 或 Chromium。
 
-出 PNG 时，用 `python3 ${CLAUDE_SKILL_DIR}/scripts/svg_check.py 图.svg --png 图.png`，不要用 CairoSVG 或 rsvg 转：Mermaid 的文字放在 foreignObject 里，这两个工具会让文字整段消失。
+出 PNG 时，用 `python3 "$SKILL_DIR/scripts/svg_check.py" 图.svg --png 图.png`，不要用 CairoSVG 或 rsvg 转：Mermaid 的文字放在 foreignObject 里，这两个工具会让文字整段消失。
 
 ## 写法
 

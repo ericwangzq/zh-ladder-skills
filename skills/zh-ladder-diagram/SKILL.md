@@ -1,11 +1,13 @@
 ---
 name: zh-ladder-diagram
-description: 为中文内容画讲解图（流程、架构、层级、时间线、方案对比、因果链、二维定位），产出可编辑的 SVG 和 PNG，中文不出方块、不溢出。不画数据图表和装饰插画。手动调用。
-disable-model-invocation: true
-allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
+description: 为中文内容画讲解图（流程、架构、层级、时间线、方案对比、因果链、二维定位），产出可编辑的 SVG 和 PNG，中文不出方块、不溢出。读者需要看清结构、先后顺序、多方关系或方案分支时使用。不画数据图表，不做装饰插画，不用图复述一段本来就能说清的文字。
+license: MIT
+compatibility: 需要 Python 3.9+，以及 pip install playwright（Chromium 用于量文字和导出 PNG）。没有浏览器时仍可产出 SVG，但必须注明未渲染检查。只读写本地文件，不访问网络。
+allowed-tools: Read Grep Glob Write Edit Bash(python3 */scripts/*.py)
+metadata:
+  author: Eric Wang
+  version: "0.5.0"
 ---
-
-> 本文里的 `${CLAUDE_SKILL_DIR}` 指这个 SKILL.md 所在的目录。Claude Code 会自动替换；其他 agent 按这个意思理解。
 
 # 中文讲解图
 
@@ -13,11 +15,15 @@ allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
 
 图比文字更容易让人信，所以也更容易误导：一条没有依据的箭头，看起来就像事实。下面的规则一半是为了好看，一半是为了不撒谎。
 
-先读底线规则：`${CLAUDE_SKILL_DIR}/references/底线.md`。
+先读底线规则：`references/底线.md`。
 
 ## 用法
 
-本 skill 只在用户手动调用时运行（`/zh-ladder-diagram`，pi 里是 `/skill:zh-ladder-diagram`）。命令后面的文字就是任务；要画的内容（文件路径或粘贴的文字）没给就先问一句，不要自己找。
+输入：命令后面的文字就是任务；要画的内容（文件路径或粘贴的文字）没给就先问一句，不要自己找。
+
+输出：一个可编辑的 SVG 和一张 PNG，写在用户指定的位置或系统临时目录（底线第 6 条）。
+
+**路径约定**：本文里 `references/…`、`scripts/…`、`assets/…` 都相对于**本 SKILL.md 所在的目录**（下称 skill 目录）。你的工作目录不是 skill 目录，跑脚本必须用绝对路径：命令里的 `$SKILL_DIR` 指 skill 目录的绝对路径，**运行前换成实际路径**（加载本 skill 时已经给过你 SKILL.md 的位置）。shell 不会自动展开这个变量。
 
 ## 1. 先决定要不要画
 
@@ -53,11 +59,12 @@ allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
 1. 运行检查脚本，它会在 Chromium 里按真实字体量每一段文字，报出溢出、文字互相压住、超出画布、省略号截断，并导出 PNG：
 
    ```bash
-   python3 ${CLAUDE_SKILL_DIR}/scripts/svg_check.py 图.svg --png 图.png
+   python3 "$SKILL_DIR/scripts/svg_check.py" 图.svg --png 图.png
    ```
 
-   第一次在一台机器上用，先跑 `python3 ${CLAUDE_SKILL_DIR}/scripts/doctor.py` 确认浏览器和中文字体可用。
+   第一次在一台机器上用，先跑 `python3 "$SKILL_DIR/scripts/doctor.py"` 确认浏览器和中文字体可用。
 
+   **脚本能查什么、查不了什么**：它量的是几何位置，溢出、互相压住、超出画布、字号太小能报出来；中文是不是方块、字体是不是装对，它不能全信（缺字体时 Chromium 会回退成默认字体，量出来的数字照样正常）。它完全不懂图的意思：箭头指的是不是原文里那条关系、节点归属对不对、强调色是不是落在了不重要的地方，都不在它查得到的范围里。
 2. **打开 PNG 自己看一遍**。脚本查不出这些：中文是不是方块、箭头或连线是不是穿过了别的框和文字、编号圆点是不是压在框线上、整体是不是太挤、强调色是不是落在了对的地方。
 3. 对照原文核对：图里每个节点、每条线、每个数字，原文里都找得到吗？「可能」「预计」在图里还在吗？
 
@@ -65,6 +72,6 @@ allowed-tools: Read Grep Glob Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/*)
 
 ## 5. 交付
 
-交付 SVG（可编辑）和 PNG（可直接贴）。图下面用一两句话写读法：先看哪里、虚线和「？」是什么意思。图里塞不下的说明，放在这里，不要缩小字号硬塞进图。
+交付 SVG（可编辑）和 PNG（可直接贴），都留在本地：不上传、不发到云端，要分享时由用户自己拿这两个文件去做。图下面用一两句话写读法：先看哪里、虚线和「？」是什么意思。图里塞不下的说明，放在这里，不要缩小字号硬塞进图。
 
-如果一张图仍然遮住了读者要判断的东西（比如他需要改一个参数看结果），用一句话提议用户改用 `zh-ladder-page` 做成交互讲解页。
+如果一张图仍然遮住了读者要判断的东西（比如他需要改一个参数看结果），用一句话提议改用 `zh-ladder-page` 做成交互讲解页，用不用由用户定。
