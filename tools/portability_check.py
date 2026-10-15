@@ -9,9 +9,11 @@
   1. frontmatter 只用 Agent Skills 规范允许的字段
   2. 没有产品专用变量（${CLAUDE_SKILL_DIR} 之类）和写死的安装目录
   3. 跑脚本的命令用 $SKILL_DIR，不假设工作目录就是 skill 目录
-  4. SKILL.md 提到的 references/ scripts/ assets/ 文件真的存在
-  5. Python 版本说法一致（SKILL.md 的 compatibility、脚本文档、README）
-  6. shared/ 的副本和各 skill 里的 references/ 一致
+  4. SKILL.md 和 references/ 提到的文件真的存在，跑脚本的命令写明目录（只查 shell 代码块）
+  5. 「底线第 N 条」在 references/底线.md 里数得到；README 写的仓库路径存在
+  逐字收录的第三方内容（references/stc/）不参与内容检查。
+  6. Python 版本说法一致（SKILL.md 的 compatibility、脚本文档、README）
+  7. shared/ 的副本和各 skill 里的 references/ 一致
 
 退出码：0 通过，1 有错，--strict 时有提醒也算 1。
 """
@@ -41,6 +43,7 @@ HOST_FIELDS = {
     "background": "Claude Code",
     "disallowed-tools": "Claude Code",
 }
+SHELL_FENCES = {"", "bash", "sh", "shell", "console", "text"}
 NAME_RE = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])$")
 # 产品专用变量：出现即错（README 和 tools/ 里可以提，那是给人看的说明）
 PRODUCT_VARS = re.compile(r"\$\{?(CLAUDE_[A-Z_]+|CODEX_[A-Z_]+|OPENAI_[A-Z_]+)\}?")
@@ -48,6 +51,7 @@ PRODUCT_VARS = re.compile(r"\$\{?(CLAUDE_[A-Z_]+|CODEX_[A-Z_]+|OPENAI_[A-Z_]+)\}
 HARD_PATHS = re.compile(r"~/\.(claude|pi|codex|gemini)\b|\.cursor/|\$CODEX_HOME")
 BARE_SCRIPT = re.compile(r"python3\s+(?:-I\s+)?scripts/")
 PY_VER_RE = re.compile(r"Python\s+3\.(\d+)")
+REPO_PATH_RE = re.compile(r"(?<![\w/-])((?:skills|experimental|dev|tools|shared)/[\w.\u4e00-\u9fff/-]+\.(?:md|py|json|svg|html|sh))")
 REF_RE = re.compile(r"(references|scripts|assets)/([\w.\u4e00-\u9fff-]+\.(?:md|py|json|svg|html|txt|png))")
 
 errors: list = []
@@ -116,26 +120,57 @@ def check_skill(d: Path):
         err(rel, f"description 长 {len(desc)}，超过 1024")
     compat = field_of(head, "compatibility")
 
-    # 正文里不能有产品专用变量和写死的安装目录
-    for lineno, line in enumerate(text.split("\n"), 1):
-        for pat, label in ((PRODUCT_VARS, "产品专用环境变量"), (HARD_PATHS, "写死的安装目录")):
-            for m in pat.finditer(line):
-                err(rel, f"第 {lineno} 行出现{label} `{m.group(0)}`")
-
-    # 命令必须显式给出 skill 目录，不能假设工作目录
     body = text[4:].split("\n---\n", 1)[1]
-    for lineno, line in enumerate(body.split("\n"), 1):
-        if "python3" in line and ".py" in line:
-            if BARE_SCRIPT.search(line):
-                err(rel, f"第 {lineno} 行用了裸的 `python3 scripts/…`，工作目录不是 skill 目录时会找不到文件")
-            elif "$SKILL_DIR" not in line:
-                err(rel, f"第 {lineno} 行跑脚本没有写明目录：{line.strip()[:60]}")
 
-    # 引用的文件要存在
-    for m in REF_RE.finditer(text):
-        target = d / m.group(0)
-        if not target.exists():
-            err(rel, f"引用了不存在的文件 {m.group(0)}")
+    # SKILL.md 和它的所有 references 一起过一遍：只查 SKILL.md 的话，
+    # 参考文件里写回产品专用变量或裸相对路径，照样会让别的 agent 跑挂
+    md_files = [f]
+    if (d / "references").is_dir():
+        md_files += [m for m in sorted((d / "references").rglob("*.md")) if "stc" not in m.parts]  # stc/ 是逐字收录的 CC BY 原文，不查内容
+    for md in md_files:
+        where = str(md.relative_to(ROOT)) if md != f else str(rel)
+        lines = md.read_text(encoding="utf-8")
+        lines = lines[4:].split("\n---\n", 1)[1] if md == f else lines
+        fence = None
+        for lineno, line in enumerate(lines.split("\n"), 1):
+            stripped = line.strip()
+            opened = re.match(r"^```(\w+)$", stripped)  # 带语言标记的 ```bash 只能开块，裸 ``` 只能关块
+            if opened:
+                if fence is None:
+                    fence = opened.group(1).lower()
+                else:
+                    err(where, f"第 {lineno} 行开了新围栏，但上一块（{fence or '无语言'}）没闭合")
+                continue
+            if stripped == "```":  # 裸 ``` 既能开不标语言的块，也能关块：按当前状态判
+                fence = "" if fence is None else None
+                continue
+            if stripped.startswith("```"):
+                err(where, f"第 {lineno} 行的围栏写法看不懂：{stripped[:40]}")
+                continue
+            for pat, label in ((PRODUCT_VARS, "产品专用环境变量"), (HARD_PATHS, "写死的安装目录")):
+                for m in pat.finditer(line):
+                    err(where, f"第 {lineno} 行出现{label} `{m.group(0)}`")
+            in_shell = fence in SHELL_FENCES or fence is None
+            looks_like_config = '": "' in line or line.lstrip().startswith(("{", '"'))
+            if in_shell and not looks_like_config and "python3" in line and ".py" in line:
+                if BARE_SCRIPT.search(line):
+                    err(where, f"第 {lineno} 行用了裸的 `python3 scripts/…`，工作目录不是 skill 目录时会找不到文件")
+                elif "$SKILL_DIR" not in line:
+                    err(where, f"第 {lineno} 行跑脚本没有写明目录：{line.strip()[:60]}")
+        if fence is not None:
+            err(where, "文件末尾还有一个没闭合的代码围栏")
+        for m in REF_RE.finditer(md.read_text(encoding="utf-8")):
+            # SKILL.md 里的路径相对 skill 根；references 里可能写同级或子目录
+            if not ((d / m.group(0)).exists() or (md.parent / m.group(0)).exists() or (d / "references" / m.group(0)).exists()):
+                err(where, f"引用了不存在的文件 {m.group(0)}")
+
+    # 「底线第 N 条」要真的数得到那一条
+    dexian = d / "references" / "底线.md"
+    if dexian.exists():
+        secs = {int(n) for n in re.findall(r"^## (\d+)\.", dexian.read_text(encoding="utf-8"), re.M)}
+        for n in {int(m.group(1)) for m in re.finditer(r"底线第 (\d+) 条", body)}:
+            if n not in secs:
+                err(rel, f"引用了「底线第 {n} 条」，但 references/底线.md 里没有这一条（现有 {sorted(secs)}）")
 
     # skill 目录约定要在正文里说明过
     if "$SKILL_DIR" in body and "路径约定" not in body:
@@ -167,6 +202,17 @@ def check_skill(d: Path):
         needs_pw = any("playwright" in f.read_text(encoding="utf-8") for f in scripts.glob("*.py"))
         if needs_pw and (not compat or "playwright" not in compat.lower()):
             err(rel, "脚本需要 playwright，但 compatibility 没写")
+
+
+def check_doc_paths():
+    """README 和 dev 文档里写的仓库路径要存在，别让人照着 cd 进一个不存在的目录。"""
+    for f in [ROOT / "README.md", ROOT / "experimental" / "README.md", ROOT / "NOTICE.md"]:
+        if not f.exists():
+            continue
+        rel_name = str(f.relative_to(ROOT))
+        for m in REPO_PATH_RE.finditer(f.read_text(encoding="utf-8")):
+            if not (ROOT / m.group(0)).exists():
+                err(rel_name, f"写了不存在的路径 {m.group(0)}")
 
 
 def check_versions():
@@ -218,6 +264,7 @@ def main():
         check_skill(d)
     check_versions()
     check_shared()
+    check_doc_paths()
 
     for e in errors:
         print(f"错  {e}")

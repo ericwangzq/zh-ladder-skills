@@ -1,7 +1,7 @@
 {
   "name": "zh-ladder",
   "displayName": "中文理解阶梯",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "把模型输出变成中文读者容易看懂、容易核对的形式：受控写作、讲解图、交互讲解页。都带交付前检查脚本。",
   "author": {
     "name": "Eric Wang"

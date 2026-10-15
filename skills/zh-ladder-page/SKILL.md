@@ -6,7 +6,7 @@ compatibility: 需要 Python 3.9+，以及 pip install playwright（Chromium 用
 allowed-tools: Read Grep Glob Write Edit Bash(python3 */scripts/*.py)
 metadata:
   author: Eric Wang
-  version: "0.5.0"
+  version: "0.5.1"
 ---
 
 # 中文交互讲解页

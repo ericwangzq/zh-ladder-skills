@@ -6,7 +6,7 @@ compatibility: 需要 Python 3.9+、ffmpeg、Manim、配音来源（默认 edge-
 allowed-tools: Read Grep Glob Write Edit Bash(python3 */scripts/*.py) Bash(manim *)
 metadata:
   author: Eric Wang
-  version: "0.5.0"
+  version: "0.5.1"
 ---
 
 # 中文讲解视频

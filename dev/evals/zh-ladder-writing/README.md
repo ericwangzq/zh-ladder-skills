@@ -56,7 +56,7 @@ python3 report.py source run/opus_base run/opus_skill     # source = 读者直�
 
 模型读者分辨不出组间差异，继续跑性价比低，之后以真实使用的体感为准。
 
-历次改写稿和评分缓存没有放进仓库，在 git 历史里（提交 `489603e` 及之前的 `dev/evals/*/results/`）。
+历次改写稿和评分缓存**没有公开**：它们只存在于作者本机那条公开前清理掉的历史里，公开仓库的 `main` 只有两个提交，按 commit 号去 `find` 只会拿到 `not a valid object name`。要这些中间产物请照上面的命令重跑一遍。
 
 ## 局限
 

@@ -119,20 +119,21 @@ shared/底线.md             共用底线的唯一源头，各 skill 的 referen
 tools/sync_shared.py       把 shared/ 同步进各 skill；--check 只检查
 tools/portability_check.py 检查 skill 是否还残留某个 agent 专用的写法
 tools/sync_local.sh        作者本机用：同步到 Skills Manager
-dev/evals/                 写作 skill 的评测用例、读者测验、脚本和结论
+CHANGELOG.md               版本记录，和 git tag v<版本号> 对上
 dev/examples/              讲解图和交互页的实测产出，以及所用的原始材料（虚构）
 .claude-plugin/            Claude Code 插件和 marketplace 信息
 ```
 
 ## 开发
 
+- 每次改动记进 [CHANGELOG.md](CHANGELOG.md)，版本号同时对齐 `.claude-plugin/plugin.json`、各 SKILL.md 的 `metadata.version` 和 git tag。
 - 改 `shared/底线.md` 后运行 `python3 tools/sync_shared.py`，再提交。
 - 脚本路径写成 `"$SKILL_DIR/scripts/…"`，并在每个 SKILL.md 的「路径约定」里说明 `$SKILL_DIR` 是什么。不要写回 `${CLAUDE_SKILL_DIR}`，那是 Claude Code 专用变量，别的 agent 只会当成一串字面字符。
 - 提交前检查：
 
   ```bash
   python3 tools/sync_shared.py --check
-  python3 tools/portability_check.py      # 跨 agent 兼容性自查
+  python3 tools/portability_check.py --strict   # 跨 agent 兼容性自查
   skills-ref validate skills/zh-ladder-writing   # 规范校验，可选
   claude plugin validate .                # 只在维护 Claude 插件时需要
   ```

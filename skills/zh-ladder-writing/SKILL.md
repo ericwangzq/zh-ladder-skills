@@ -6,7 +6,7 @@ compatibility: 需要 Python 3.9+（保真对比脚本零第三方依赖，未�
 allowed-tools: Read Grep Glob Write Edit Bash(python3 */scripts/*.py)
 metadata:
   author: Eric Wang
-  version: "0.5.0"
+  version: "0.5.1"
 ---
 
 # 中文受控写作
